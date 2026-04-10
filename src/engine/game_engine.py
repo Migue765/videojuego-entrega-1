@@ -6,10 +6,9 @@ import esper
 
 from src.ecs.systems import (
     system_movement, system_bounce, system_render, system_enemy_spawner,
-    system_player_input, system_player_movement, system_player_boundary,
-    system_player_fire, system_bullet_boundary, system_bullet_enemy_collision,
-    system_player_enemy_collision
+    system_bullet_boundary, system_bullet_enemy_collision,
 )
+from src.engine.player_events import process_player_events
 from src.create import create_enemy_spawner, create_player
 
 
@@ -61,7 +60,6 @@ class GameEngine:
 
         self._world = esper.World()
 
-        # Create player
         pc = self._player_cfg
         create_player(
             self._world,
@@ -72,7 +70,6 @@ class GameEngine:
             color=(pc["color"]["r"], pc["color"]["g"], pc["color"]["b"])
         )
 
-        # Create enemy spawner
         create_enemy_spawner(self._world, level_data, enemies_data)
 
     def _calculate_time(self):
@@ -88,25 +85,21 @@ class GameEngine:
             self._events.append(event)
 
     def _update(self):
-        # --- Input (Command pattern) ---
-        system_player_input(self._world, self._events)
+        # --- Jugador (input, movimiento, disparo, colisión con enemigos) ---
+        process_player_events(
+            self._world, self._events, self._delta_time,
+            self._player_cfg, self._bullet_cfg, self._max_bullets,
+            self._window_w, self._window_h,
+        )
 
-        # --- Player movement & boundary ---
-        system_player_movement(self._world, self._delta_time, self._player_cfg["speed"])
-        system_player_boundary(self._world, self._window_w, self._window_h)
-
-        # --- Fire ---
-        system_player_fire(self._world, self._bullet_cfg, self._max_bullets)
-
-        # --- Enemy spawning & movement ---
+        # --- Enemigos ---
         system_enemy_spawner(self._world, self._delta_time)
         system_movement(self._world, self._delta_time)
         system_bounce(self._world, self._window_w, self._window_h)
 
-        # --- Bullet lifecycle & collisions ---
+        # --- Balas ---
         system_bullet_boundary(self._world, self._window_w, self._window_h)
         system_bullet_enemy_collision(self._world)
-        system_player_enemy_collision(self._world)
 
     def _draw(self):
         self._screen.fill(self._bg_color)
