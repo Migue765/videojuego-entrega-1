@@ -1,8 +1,7 @@
 import esper
 
-from src.ecs.components import (
-    CTransform, CShape, CInputCommand, CTagPlayer, CTagBullet, PlayerAction
-)
+from src.ecs.components import CTransform, CShape, CInputCommand, CTagPlayer, CTagBullet
+from src.ecs.commands import PlayerAction
 from src.create import create_bullet
 
 

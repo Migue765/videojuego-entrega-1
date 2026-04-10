@@ -1,7 +1,8 @@
 import pygame
 import esper
 
-from src.ecs.components import CInputCommand, CTagPlayer, PlayerAction
+from src.ecs.components import CInputCommand, CTagPlayer
+from src.ecs.commands import PlayerAction
 
 
 def system_player_input(world: esper.World, events: list):
