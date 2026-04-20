@@ -14,3 +14,13 @@ class CTagBullet:
 @dataclass
 class CTagEnemy:
     pass
+
+
+@dataclass
+class CTagHunter:
+    pass
+
+
+@dataclass
+class CTagExplosion:
+    pass

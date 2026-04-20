@@ -6,6 +6,7 @@ import esper
 
 from src.ecs.systems import (
     system_movement, system_bounce, system_render, system_enemy_spawner,
+    system_animation, system_hunter_state, system_explosion,
     system_bullet_boundary, system_bullet_enemy_collision,
 )
 from src.engine.player_events import process_player_events
@@ -40,6 +41,8 @@ class GameEngine:
             self._player_cfg = json.load(f)
         with open(os.path.join(cfg_path, "bullet.json")) as f:
             self._bullet_cfg = json.load(f)
+        with open(os.path.join(cfg_path, "explosion.json")) as f:
+            self._explosion_cfg = json.load(f)
 
         pygame.init()
         self._window_w = window_cfg["size"]["w"]
@@ -47,7 +50,7 @@ class GameEngine:
         self._bg_color = (
             window_cfg["bg_color"]["r"],
             window_cfg["bg_color"]["g"],
-            window_cfg["bg_color"]["b"]
+            window_cfg["bg_color"]["b"],
         )
         self._screen = pygame.display.set_mode((self._window_w, self._window_h))
         pygame.display.set_caption(window_cfg["title"])
@@ -55,21 +58,15 @@ class GameEngine:
         self._framerate = window_cfg["framerate"]
         self._delta_time = 0.0
 
-        self._max_bullets = level_data.get("max_bullets", 3)
-        spawn = level_data.get("player_spawn", {"x": self._window_w // 2, "y": self._window_h // 2})
+        player_spawn = level_data.get("player_spawn", {})
+        spawn_pos = player_spawn.get("position", {"x": self._window_w // 2, "y": self._window_h // 2})
+        self._max_bullets = int(
+            player_spawn.get("max_bullets", level_data.get("max_bullets", 3))
+        )
 
         self._world = esper.World()
 
-        pc = self._player_cfg
-        create_player(
-            self._world,
-            x=spawn["x"],
-            y=spawn["y"],
-            w=pc["size"]["w"],
-            h=pc["size"]["h"],
-            color=(pc["color"]["r"], pc["color"]["g"], pc["color"]["b"])
-        )
-
+        create_player(self._world, x=spawn_pos["x"], y=spawn_pos["y"], player_cfg=self._player_cfg)
         create_enemy_spawner(self._world, level_data, enemies_data)
 
     def _calculate_time(self):
@@ -85,21 +82,26 @@ class GameEngine:
             self._events.append(event)
 
     def _update(self):
-        # --- Jugador (input, movimiento, disparo, colisión con enemigos) ---
+        # --- Jugador (input, movimiento, animación, disparo, colisión con enemigos) ---
         process_player_events(
             self._world, self._events, self._delta_time,
-            self._player_cfg, self._bullet_cfg, self._max_bullets,
-            self._window_w, self._window_h,
+            self._player_cfg, self._bullet_cfg, self._explosion_cfg,
+            self._max_bullets, self._window_w, self._window_h,
         )
 
         # --- Enemigos ---
         system_enemy_spawner(self._world, self._delta_time)
+        system_hunter_state(self._world)
         system_movement(self._world, self._delta_time)
         system_bounce(self._world, self._window_w, self._window_h)
 
         # --- Balas ---
         system_bullet_boundary(self._world, self._window_w, self._window_h)
-        system_bullet_enemy_collision(self._world)
+        system_bullet_enemy_collision(self._world, self._explosion_cfg)
+
+        # --- Animación y explosiones ---
+        system_animation(self._world, self._delta_time)
+        system_explosion(self._world)
 
     def _draw(self):
         self._screen.fill(self._bg_color)
