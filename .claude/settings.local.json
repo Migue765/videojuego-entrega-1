@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(SDL_VIDEODRIVER=dummy timeout 4 python3 main.py)"
+    ]
+  }
+}
