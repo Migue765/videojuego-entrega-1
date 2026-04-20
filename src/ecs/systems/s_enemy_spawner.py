@@ -1,7 +1,7 @@
 import esper
 
 from src.ecs.components import CEnemySpawner
-from src.create import create_rectangle
+from src.create import create_enemy, create_hunter
 
 
 def system_enemy_spawner(world: esper.World, delta_time: float):
@@ -9,21 +9,12 @@ def system_enemy_spawner(world: esper.World, delta_time: float):
     for _, spawner in world.get_component(CEnemySpawner):
         spawner.elapsed += delta_time
         for event in spawner.events:
-            if not event.triggered and spawner.elapsed >= event.time:
-                enemy_data = spawner.enemies_data.get(event.enemy_type)
-                if enemy_data:
-                    create_rectangle(
-                        world,
-                        x=event.x,
-                        y=event.y,
-                        w=enemy_data["size"]["x"],
-                        h=enemy_data["size"]["y"],
-                        color=(
-                            enemy_data["color"]["r"],
-                            enemy_data["color"]["g"],
-                            enemy_data["color"]["b"]
-                        ),
-                        speed_min=enemy_data["velocity_min"],
-                        speed_max=enemy_data["velocity_max"]
-                    )
-                event.triggered = True
+            if event.triggered or spawner.elapsed < event.time:
+                continue
+            enemy_data = spawner.enemies_data.get(event.enemy_type)
+            if enemy_data is not None:
+                if "animations" in enemy_data and "velocity_chase" in enemy_data:
+                    create_hunter(world, event.x, event.y, enemy_data)
+                else:
+                    create_enemy(world, event.x, event.y, enemy_data)
+            event.triggered = True
