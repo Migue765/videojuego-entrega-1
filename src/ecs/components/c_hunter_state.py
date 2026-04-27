@@ -15,3 +15,4 @@ class CHunterState:
     chase_speed: float = 0.0
     return_speed: float = 0.0
     state: str = HUNTER_IDLE
+    sound_chase: str = ""

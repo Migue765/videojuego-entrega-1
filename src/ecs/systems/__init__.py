@@ -17,3 +17,10 @@ from src.ecs.systems.s_collision_enemy import (
     system_bullet_enemy_collision,
     system_player_enemy_collision,
 )
+from src.ecs.systems.s_shield import (
+    system_shield_activate,
+    system_shield_update,
+    system_shield_cooldown,
+    system_shield_render,
+)
+from src.ecs.systems.s_hud import system_hud_render, system_hud_pause

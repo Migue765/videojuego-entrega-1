@@ -72,6 +72,9 @@ def system_hunter_state(world: esper.World):
         if state.state == HUNTER_IDLE:
             if dist_player <= state.chase_distance:
                 state.state = HUNTER_CHASING
+                if state.sound_chase:
+                    from src.engine.service_locator import ServiceLocator
+                    ServiceLocator.sounds().play(state.sound_chase)
             else:
                 velocity.vx = 0.0
                 velocity.vy = 0.0

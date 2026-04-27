@@ -1,0 +1,41 @@
+{
+    "title": {
+        "font": "assets/fnt/PressStart2P.ttf",
+        "text": "STAR DEFENDER",
+        "color": [220, 220, 255],
+        "size": 12,
+        "position": [320, 10],
+        "align": "center"
+    },
+    "pause": {
+        "font": "assets/fnt/PressStart2P.ttf",
+        "text": "- PAUSED -",
+        "color": [255, 220, 0],
+        "size": 20,
+        "position": [320, 150],
+        "align": "center"
+    },
+    "pause_sub": {
+        "font": "assets/fnt/PressStart2P.ttf",
+        "text": "Press P to resume",
+        "color": [200, 200, 200],
+        "size": 8,
+        "position": [320, 195],
+        "align": "center"
+    },
+    "instructions": {
+        "font": "assets/fnt/PressStart2P.ttf",
+        "text": "ARROWS:MOVE  CLICK:FIRE  SPACE:SHIELD  P:PAUSE",
+        "color": [120, 120, 120],
+        "size": 6,
+        "position": [320, 350],
+        "align": "center"
+    },
+    "shield_label": {
+        "font": "assets/fnt/PressStart2P.ttf",
+        "text": "SHIELD: READY",
+        "color": [80, 220, 120],
+        "size": 7,
+        "position": [5, 5]
+    }
+}
