@@ -1,21 +1,19 @@
 import math
 import random
 
-import pygame
 import esper
 
 from src.ecs.components import (
     CTransform, CVelocity, CSurface, CAnimation, CHunterState,
     CEnemySpawner, SpawnEvent,
-    CTagPlayer, CTagBullet, CTagEnemy, CTagHunter, CTagExplosion, CInputCommand,
+    CTagPlayer, CTagBullet, CTagEnemy, CTagHunter, CTagExplosion,
+    CInputCommand, CSpecialAbility,
 )
+from src.engine.service_locator import ServiceLocator
 
 
 def _load_surface(image_path: str, number_frames: int = 1) -> CSurface:
-    surface = pygame.image.load(image_path).convert_alpha()
-    frame_w = surface.get_width() // max(number_frames, 1)
-    frame_h = surface.get_height()
-    return CSurface(surf=surface, area=pygame.Rect(0, 0, frame_w, frame_h))
+    return ServiceLocator.images().get(image_path, number_frames)
 
 
 def create_enemy(world: esper.World, x: float, y: float, enemy_data: dict) -> int:
@@ -26,6 +24,8 @@ def create_enemy(world: esper.World, x: float, y: float, enemy_data: dict) -> in
     angle = random.uniform(0, 2 * math.pi)
     vx = speed * math.cos(angle)
     vy = speed * math.sin(angle)
+
+    ServiceLocator.sounds().play(enemy_data.get("sound", ""))
 
     entity = world.create_entity()
     world.add_component(entity, CTransform(x=x - surface_cmp.area.width / 2,
@@ -58,6 +58,7 @@ def create_hunter(world: esper.World, x: float, y: float, enemy_data: dict) -> i
         return_distance=float(enemy_data["distance_start_return"]),
         chase_speed=float(enemy_data["velocity_chase"]),
         return_speed=float(enemy_data.get("velocity_return", enemy_data["velocity_chase"])),
+        sound_chase=enemy_data.get("sound_chase", ""),
     ))
     world.add_component(entity, CTagEnemy())
     world.add_component(entity, CTagHunter())
@@ -80,12 +81,18 @@ def create_enemy_spawner(world: esper.World, level_data: dict, enemies_data: dic
 
 
 def create_player(world: esper.World, x: float, y: float, player_cfg: dict) -> int:
-    """Creates the animated player entity."""
+    """Creates the animated player entity with special ability component."""
     animations_cfg = player_cfg["animations"]
     number_frames = int(animations_cfg.get("number_frames", 1))
     surface_cmp = _load_surface(player_cfg["image"], number_frames=number_frames)
     anim_cmp = CAnimation.from_config(animations_cfg)
     anim_cmp.play("IDLE")
+
+    special_cfg = player_cfg.get("special_ability", {})
+    ability = CSpecialAbility(
+        cooldown_max=float(special_cfg.get("cooldown", 5.0)),
+        radius=float(special_cfg.get("radius", 200.0)),
+    )
 
     entity = world.create_entity()
     world.add_component(entity, CTransform(
@@ -96,6 +103,7 @@ def create_player(world: esper.World, x: float, y: float, player_cfg: dict) -> i
     world.add_component(entity, anim_cmp)
     world.add_component(entity, CTagPlayer())
     world.add_component(entity, CInputCommand())
+    world.add_component(entity, ability)
     return entity
 
 
@@ -111,6 +119,8 @@ def create_bullet(world: esper.World, origin_x: float, origin_y: float,
     speed = float(bullet_cfg.get("velocity", bullet_cfg.get("speed", 0)))
     vx = (dx / dist) * speed
     vy = (dy / dist) * speed
+
+    ServiceLocator.sounds().play(bullet_cfg.get("sound", ""))
 
     surface_cmp = _load_surface(bullet_cfg["image"], number_frames=1)
 
@@ -132,6 +142,8 @@ def create_explosion(world: esper.World, center_x: float, center_y: float,
     number_frames = int(animations_cfg.get("number_frames", 1))
     surface_cmp = _load_surface(explosion_cfg["image"], number_frames=number_frames)
     anim_cmp = CAnimation.from_config(animations_cfg)
+
+    ServiceLocator.sounds().play(explosion_cfg.get("sound", ""))
 
     entity = world.create_entity()
     world.add_component(entity, CTransform(

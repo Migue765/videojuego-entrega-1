@@ -49,8 +49,11 @@ def system_bullet_enemy_collision(world: esper.World, explosion_cfg: dict):
         create_explosion(world, cx, cy, explosion_cfg)
 
 
-def system_player_enemy_collision(world: esper.World, explosion_cfg: dict):
-    """Destroys player and enemy on contact, spawning an explosion at the player."""
+def system_player_enemy_collision(world: esper.World, explosion_cfg: dict) -> bool:
+    """Destroys player and enemy on contact, spawning an explosion at the player.
+
+    Returns True if the player was killed this frame.
+    """
     players = list(world.get_components(CTagPlayer, CTransform, CSurface))
     enemies = list(world.get_components(CTagEnemy, CTransform, CSurface))
 
@@ -63,4 +66,5 @@ def system_player_enemy_collision(world: esper.World, explosion_cfg: dict):
                 create_explosion(world, e_rect.centerx, e_rect.centery, explosion_cfg)
                 world.delete_entity(p_ent, immediate=True)
                 world.delete_entity(e_ent, immediate=True)
-                return
+                return True
+    return False

@@ -24,3 +24,8 @@ class CTagHunter:
 @dataclass
 class CTagExplosion:
     pass
+
+
+@dataclass
+class CTagShieldWave:
+    pass

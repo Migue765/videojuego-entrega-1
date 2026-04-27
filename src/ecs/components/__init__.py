@@ -7,6 +7,8 @@ from src.ecs.components.c_hunter_state import (
 )
 from src.ecs.components.c_spawner import SpawnEvent, CEnemySpawner
 from src.ecs.components.c_tags import (
-    CTagPlayer, CTagBullet, CTagEnemy, CTagHunter, CTagExplosion,
+    CTagPlayer, CTagBullet, CTagEnemy, CTagHunter, CTagExplosion, CTagShieldWave,
 )
 from src.ecs.components.c_input_command import CInputCommand
+from src.ecs.components.c_special_ability import CSpecialAbility
+from src.ecs.components.c_shield_wave import CShieldWave

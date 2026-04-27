@@ -1,4 +1,5 @@
 {
     "image": "assets/img/bullet.png",
-    "velocity": 400
+    "velocity": 400,
+    "sound": "assets/snd/laser.ogg"
 }

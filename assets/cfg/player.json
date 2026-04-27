@@ -17,5 +17,9 @@
             }
         ]
     },
-    "input_velocity": 200
+    "input_velocity": 200,
+    "special_ability": {
+        "cooldown": 5.0,
+        "radius": 200.0
+    }
 }

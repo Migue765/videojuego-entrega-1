@@ -10,8 +10,11 @@ class CSurface:
 
     @classmethod
     def from_path(cls, image_path: str, num_frames: int = 1) -> "CSurface":
-        surface = pygame.image.load(image_path).convert_alpha()
-        frame_w = surface.get_width() // max(num_frames, 1)
-        frame_h = surface.get_height()
-        area = pygame.Rect(0, 0, frame_w, frame_h)
-        return cls(surf=surface, area=area)
+        from src.engine.service_locator import ServiceLocator
+        return ServiceLocator.images().get(image_path, num_frames)
+
+    @classmethod
+    def from_text(cls, text: str, font: pygame.font.Font, color: tuple) -> "CSurface":
+        """Creates a CSurface from rendered text. Useful for static labels."""
+        surf = font.render(text, True, color)
+        return cls(surf=surf, area=surf.get_rect())

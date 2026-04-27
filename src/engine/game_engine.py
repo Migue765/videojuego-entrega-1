@@ -4,18 +4,25 @@ import os
 import pygame
 import esper
 
+from src.engine.service_locator import ServiceLocator
 from src.ecs.systems import (
     system_movement, system_bounce, system_render, system_enemy_spawner,
     system_animation, system_hunter_state, system_explosion,
     system_bullet_boundary, system_bullet_enemy_collision,
+    system_shield_update, system_shield_cooldown, system_shield_render,
+    system_hud_render, system_hud_pause, system_hud_game_over,
 )
 from src.engine.player_events import process_player_events
 from src.create import create_enemy_spawner, create_player
 
 
 class GameEngine:
+    _DEATH_DELAY = 2.0   # seconds to show "GAME OVER" before restarting
+
     def __init__(self) -> None:
         self.is_running = False
+        self._is_paused = False
+        self._death_timer = 0.0
         self._events = []
 
     def run(self) -> None:
@@ -28,9 +35,12 @@ class GameEngine:
             self._draw()
         self._clean()
 
+    # ------------------------------------------------------------------
     def _create(self):
-        cfg_path = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "cfg")
-        cfg_path = os.path.normpath(cfg_path)
+        cfg_path = os.path.normpath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "assets", "cfg")
+        )
+
         with open(os.path.join(cfg_path, "window.json")) as f:
             window_cfg = json.load(f)
         with open(os.path.join(cfg_path, "enemies.json")) as f:
@@ -43,8 +53,18 @@ class GameEngine:
             self._bullet_cfg = json.load(f)
         with open(os.path.join(cfg_path, "explosion.json")) as f:
             self._explosion_cfg = json.load(f)
+        with open(os.path.join(cfg_path, "interface.json")) as f:
+            self._interface_cfg = json.load(f)
 
         pygame.init()
+        try:
+            pygame.mixer.init()
+        except Exception:
+            pass  # browsers require user interaction first; audio is optional
+
+        # ServiceLocator must be initialised before any resource is loaded
+        ServiceLocator.initialize()
+
         self._window_w = window_cfg["size"]["w"]
         self._window_h = window_cfg["size"]["h"]
         self._bg_color = (
@@ -59,16 +79,23 @@ class GameEngine:
         self._delta_time = 0.0
 
         player_spawn = level_data.get("player_spawn", {})
-        spawn_pos = player_spawn.get("position", {"x": self._window_w // 2, "y": self._window_h // 2})
+        spawn_pos = player_spawn.get(
+            "position", {"x": self._window_w // 2, "y": self._window_h // 2}
+        )
         self._max_bullets = int(
             player_spawn.get("max_bullets", level_data.get("max_bullets", 3))
         )
 
         self._world = esper.World()
-
-        create_player(self._world, x=spawn_pos["x"], y=spawn_pos["y"], player_cfg=self._player_cfg)
+        create_player(
+            self._world,
+            x=spawn_pos["x"],
+            y=spawn_pos["y"],
+            player_cfg=self._player_cfg,
+        )
         create_enemy_spawner(self._world, level_data, enemies_data)
 
+    # ------------------------------------------------------------------
     def _calculate_time(self):
         self._delta_time = self._clock.tick(self._framerate) / 1000.0
 
@@ -77,35 +104,87 @@ class GameEngine:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.is_running = False
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                self.is_running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.is_running = False
+                if event.key == pygame.K_p:
+                    self._is_paused = not self._is_paused
             self._events.append(event)
 
+    def _restart(self):
+        """Tears down the current world and starts a fresh game."""
+        self._world = esper.World()
+        player_spawn = {}
+        # Re-read spawn position from cached level data isn't available here,
+        # so we re-use the screen centre as fallback; _create already stored cfg.
+        spawn_x = self._window_w // 2
+        spawn_y = self._window_h // 2
+        import json, os
+        cfg_path = os.path.normpath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "assets", "cfg")
+        )
+        with open(os.path.join(cfg_path, "level_01.json")) as f:
+            level_data = json.load(f)
+        with open(os.path.join(cfg_path, "enemies.json")) as f:
+            enemies_data = json.load(f)
+        player_spawn = level_data.get("player_spawn", {})
+        pos = player_spawn.get("position", {"x": spawn_x, "y": spawn_y})
+        self._max_bullets = int(player_spawn.get("max_bullets", 3))
+        create_player(self._world, x=pos["x"], y=pos["y"], player_cfg=self._player_cfg)
+        create_enemy_spawner(self._world, level_data, enemies_data)
+        self._death_timer = 0.0
+        self._is_paused = False
+
     def _update(self):
-        # --- Jugador (input, movimiento, animación, disparo, colisión con enemigos) ---
-        process_player_events(
+        # --- Death countdown: freeze game, then restart ---
+        if self._death_timer > 0:
+            self._death_timer -= self._delta_time
+            system_animation(self._world, self._delta_time)
+            system_explosion(self._world)
+            if self._death_timer <= 0:
+                self._restart()
+            return
+
+        if self._is_paused:
+            return
+
+        # --- Player (input, move, animate, fire, shield, collision) ---
+        player_died = process_player_events(
             self._world, self._events, self._delta_time,
             self._player_cfg, self._bullet_cfg, self._explosion_cfg,
             self._max_bullets, self._window_w, self._window_h,
         )
+        if player_died:
+            self._death_timer = self._DEATH_DELAY
+            return
 
-        # --- Enemigos ---
+        # --- Enemies ---
         system_enemy_spawner(self._world, self._delta_time)
         system_hunter_state(self._world)
         system_movement(self._world, self._delta_time)
         system_bounce(self._world, self._window_w, self._window_h)
 
-        # --- Balas ---
+        # --- Bullets ---
         system_bullet_boundary(self._world, self._window_w, self._window_h)
         system_bullet_enemy_collision(self._world, self._explosion_cfg)
 
-        # --- Animación y explosiones ---
+        # --- Shield ability ---
+        system_shield_update(self._world, self._delta_time)
+        system_shield_cooldown(self._world, self._delta_time)
+
+        # --- Animation and explosions ---
         system_animation(self._world, self._delta_time)
         system_explosion(self._world)
 
     def _draw(self):
         self._screen.fill(self._bg_color)
         system_render(self._world, self._screen)
+        system_shield_render(self._world, self._screen)
+        system_hud_render(self._screen, self._world, self._interface_cfg)
+        if self._death_timer > 0:
+            system_hud_game_over(self._screen, self._interface_cfg)
+        elif self._is_paused:
+            system_hud_pause(self._screen, self._interface_cfg)
         pygame.display.flip()
 
     def _clean(self):

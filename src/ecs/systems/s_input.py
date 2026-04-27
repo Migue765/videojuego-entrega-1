@@ -19,6 +19,7 @@ def system_player_input(world: esper.World, events: list):
         cmd.actions.discard(PlayerAction.PLAYER_UP)
         cmd.actions.discard(PlayerAction.PLAYER_DOWN)
         cmd.actions.discard(PlayerAction.PLAYER_FIRE)
+        cmd.actions.discard(PlayerAction.PLAYER_SHIELD)
 
         if keys[pygame.K_LEFT]:
             cmd.actions.add(PlayerAction.PLAYER_LEFT)
@@ -33,3 +34,5 @@ def system_player_input(world: esper.World, events: list):
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 cmd.actions.add(PlayerAction.PLAYER_FIRE)
                 cmd.mouse_x, cmd.mouse_y = event.pos
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                cmd.actions.add(PlayerAction.PLAYER_SHIELD)
