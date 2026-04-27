@@ -23,4 +23,4 @@ from src.ecs.systems.s_shield import (
     system_shield_cooldown,
     system_shield_render,
 )
-from src.ecs.systems.s_hud import system_hud_render, system_hud_pause
+from src.ecs.systems.s_hud import system_hud_render, system_hud_pause, system_hud_game_over

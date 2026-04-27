@@ -43,6 +43,15 @@ def system_hud_render(screen: pygame.Surface, world: esper.World,
                    override_color=(255, 100, 80))
 
 
+def system_hud_game_over(screen: pygame.Surface, interface_cfg: dict) -> None:
+    """Draws a semi-transparent game-over overlay."""
+    overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 160))
+    screen.blit(overlay, (0, 0))
+    _blit_text(screen, interface_cfg["game_over"])
+    _blit_text(screen, interface_cfg["game_over_sub"])
+
+
 def system_hud_pause(screen: pygame.Surface, interface_cfg: dict) -> None:
     """Draws a semi-transparent pause overlay with pause text."""
     overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
