@@ -8,7 +8,11 @@
       "Bash(/Users/mgomezalarco/.fury/fury_venv/bin/python -m pygbag --build main.py 2>&1)",
       "Bash(SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy python make_assets.py 2>&1)",
       "Bash(zip -r ../../SEMANA_4/web.zip .)",
-      "Read(//Users/mgomezalarco/Documents/Universidad/vidojuegos/**)"
+      "Read(//Users/mgomezalarco/Documents/Universidad/vidojuegos/**)",
+      "Bash(/Users/mgomezalarco/.fury/fury_venv/bin/python -m pygbag --build main.py)",
+      "Bash(cp:*)",
+      "Bash(curl -sL \"https://pygame-web.github.io/cdn/0.9.3/default.tmpl\" -o /Users/mgomezalarco/Documents/Universidad/vidojuegos/ma_gomeza1/PROYECTO_VACIO/build/web-cache/27613e24ba16d44f2a5c88150c6d64e5.tmpl)",
+      "Bash(curl -sL \"https://pygame-web.github.io/cdn/0.9.3/favicon.png\" -o /Users/mgomezalarco/Documents/Universidad/vidojuegos/ma_gomeza1/PROYECTO_VACIO/build/web-cache/29a2a48092f8c1a6595a20019f830691.png)"
     ]
   }
 }

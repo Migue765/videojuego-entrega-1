@@ -19,21 +19,33 @@ class _ImageService:
 
 
 class _SoundService:
-    """Loads, caches and plays pygame Sound objects."""
+    """Loads, caches and plays pygame Sound objects.
+
+    All operations are no-ops when the mixer is unavailable (e.g. in browsers
+    before a user gesture, or when pygame.mixer.init() failed).
+    """
 
     def __init__(self) -> None:
         self._cache: dict = {}
+        self._available: bool = pygame.mixer.get_init() is not None
 
-    def get(self, path: str) -> pygame.mixer.Sound:
+    def get(self, path: str):
+        if not self._available or not path:
+            return None
         if path not in self._cache:
-            self._cache[path] = pygame.mixer.Sound(path)
+            try:
+                self._cache[path] = pygame.mixer.Sound(path)
+            except Exception:
+                self._cache[path] = None
         return self._cache[path]
 
     def play(self, path: str) -> None:
-        if not path:
+        if not self._available or not path:
             return
         try:
-            self.get(path).play()
+            snd = self.get(path)
+            if snd is not None:
+                snd.play()
         except Exception:
             pass
 

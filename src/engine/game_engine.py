@@ -54,7 +54,10 @@ class GameEngine:
             self._interface_cfg = json.load(f)
 
         pygame.init()
-        pygame.mixer.init()
+        try:
+            pygame.mixer.init()
+        except Exception:
+            pass  # browsers require user interaction first; audio is optional
 
         # ServiceLocator must be initialised before any resource is loaded
         ServiceLocator.initialize()
